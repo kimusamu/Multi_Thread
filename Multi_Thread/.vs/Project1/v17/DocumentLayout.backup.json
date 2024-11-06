@@ -1,9 +1,13 @@
 {
   "Version": 1,
-  "WorkspaceRootPath": "C:\\Users\\kctck\\OneDrive\\\uBC14\uD0D5 \uD654\uBA74\\Project_1\\Multi_Thread\\Project1\\",
+  "WorkspaceRootPath": "C:\\Users\\kctck\\OneDrive\\\uBC14\uD0D5 \uD654\uBA74\\Project1\\Multi_Thread\\Multi_Thread\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{6FEEB581-564A-4675-9B7C-184022E6D5FC}|Project1\\Project1.vcxproj|C:\\Users\\kctck\\OneDrive\\\uBC14\uD0D5 \uD654\uBA74\\Project_1\\Multi_Thread\\Project1\\Project1\\FULL_SET.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "AbsoluteMoniker": "D:0:0:{6FEEB581-564A-4675-9B7C-184022E6D5FC}|Project1\\Project1.vcxproj|C:\\Users\\kctck\\OneDrive\\\uBC14\uD0D5 \uD654\uBA74\\Project1\\Multi_Thread\\Multi_Thread\\Project1\\FULL_QUEUE.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{6FEEB581-564A-4675-9B7C-184022E6D5FC}|Project1\\Project1.vcxproj|solutionrelative:Project1\\FULL_QUEUE.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6FEEB581-564A-4675-9B7C-184022E6D5FC}|Project1\\Project1.vcxproj|C:\\Users\\kctck\\OneDrive\\\uBC14\uD0D5 \uD654\uBA74\\Project1\\Multi_Thread\\Multi_Thread\\Project1\\FULL_SET.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
       "RelativeMoniker": "D:0:0:{6FEEB581-564A-4675-9B7C-184022E6D5FC}|Project1\\Project1.vcxproj|solutionrelative:Project1\\FULL_SET.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     }
   ],
@@ -19,10 +23,23 @@
             {
               "$type": "Document",
               "DocumentIndex": 0,
+              "Title": "FULL_QUEUE.cpp",
+              "DocumentMoniker": "C:\\Users\\kctck\\OneDrive\\\uBC14\uD0D5 \uD654\uBA74\\Project1\\Multi_Thread\\Multi_Thread\\Project1\\FULL_QUEUE.cpp",
+              "RelativeDocumentMoniker": "Project1\\FULL_QUEUE.cpp",
+              "ToolTip": "C:\\Users\\kctck\\OneDrive\\\uBC14\uD0D5 \uD654\uBA74\\Project1\\Multi_Thread\\Multi_Thread\\Project1\\FULL_QUEUE.cpp",
+              "RelativeToolTip": "Project1\\FULL_QUEUE.cpp",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA8AAAAVAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2024-11-06T05:24:23.275Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
               "Title": "FULL_SET.cpp",
-              "DocumentMoniker": "C:\\Users\\kctck\\OneDrive\\\uBC14\uD0D5 \uD654\uBA74\\Project_1\\Multi_Thread\\Project1\\Project1\\FULL_SET.cpp",
+              "DocumentMoniker": "C:\\Users\\kctck\\OneDrive\\\uBC14\uD0D5 \uD654\uBA74\\Project1\\Multi_Thread\\Multi_Thread\\Project1\\FULL_SET.cpp",
               "RelativeDocumentMoniker": "Project1\\FULL_SET.cpp",
-              "ToolTip": "C:\\Users\\kctck\\OneDrive\\\uBC14\uD0D5 \uD654\uBA74\\Project_1\\Multi_Thread\\Project1\\Project1\\FULL_SET.cpp",
+              "ToolTip": "C:\\Users\\kctck\\OneDrive\\\uBC14\uD0D5 \uD654\uBA74\\Project1\\Multi_Thread\\Multi_Thread\\Project1\\FULL_SET.cpp",
               "RelativeToolTip": "Project1\\FULL_SET.cpp",
               "ViewState": "AgIAALcBAAAAAAAAAAAkwM8BAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",

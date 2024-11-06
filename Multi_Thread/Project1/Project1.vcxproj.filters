@@ -18,5 +18,8 @@
     <ClCompile Include="FULL_SET.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="FULL_QUEUE.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
