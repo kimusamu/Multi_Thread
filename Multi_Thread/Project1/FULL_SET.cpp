@@ -178,8 +178,6 @@ public:
 		auto curr = prev->next;
 		curr->lock();
 
-		auto curr = prev->next;
-
 		while (curr->key < x) {
 			prev->unlock();
 
@@ -457,13 +455,144 @@ public:
 	}
 };
 
+class B_SET {
+	NODE head{ (int)(0x80000000) }, tail{ (int)(0x7FFFFFFF) };
+
+public:
+	B_SET() {
+		head.next = &tail;
+	}
+
+	void clear() {
+		while (head.next != &tail) {
+			auto p = head.next;
+			head.next = head.next->next;
+			delete p;
+		}
+	}
+
+	bool validate(NODE* prev, NODE* curr) {
+		return !prev->marked && !curr->marked && prev->next == curr;
+	}
+
+	bool Add(int x) {
+		auto p = new NODE{ x };
+
+		while (true) {
+			auto prev = &head;
+			auto curr = prev->next;
+
+			while (curr->key < x) {
+				prev = curr;
+				curr = curr->next;
+			}
+
+			prev->lock();
+			curr->lock();
+
+			if (false == validate(prev, curr)) {
+				prev->unlock();
+				curr->unlock();
+
+				continue;
+			}
+
+			if (curr->key == x) {
+				prev->unlock();
+				curr->unlock();
+
+				delete p;
+
+				return false;
+			}
+
+			else {
+				p->next = curr;
+				prev->next = p;
+
+				prev->unlock();
+				curr->unlock();
+
+				return true;
+			}
+		}
+	}
+
+	bool Remove(int x) {
+		while (true) {
+			auto prev = &head;
+			auto curr = prev->next;
+
+			while (curr->key < x) {
+				prev = curr;
+				curr = curr->next;
+			}
+
+			prev->lock();
+			curr->lock();
+
+			if (false == validate(prev, curr)) {
+				prev->unlock();
+				curr->unlock();
+				
+				continue;
+			}
+
+			if (curr->key == x) {
+				curr->marked = true;
+				prev->next = curr->next;
+
+				prev->unlock();
+				curr->unlock();
+
+				return true;
+			}
+
+			else {
+				prev->unlock();
+				curr->unlock();
+
+				return false;
+			}
+		}
+	}
+
+	bool Contains(int x) {
+		while (true) {
+			auto curr = &head;
+
+			while (curr->key < x) {
+				curr = curr->next;
+			}
+
+			return curr->key == x && !curr->marked;
+		}
+	}
+
+	void print20() {
+		auto p = head.next;
+
+		for (int i = 0; i < 20; ++i) {
+			if (p == &tail) {
+				break;
+			}
+
+			std::cout << p->key << ", ";
+			p = p->next;
+		}
+
+		std::cout << std::endl;
+	}
+};
+
 
 const int NUM_TEST = 4000000;
 const int KEY_RANGE = 1000;
 
-C_SET my_set;
+// C_SET my_set;
 // F_SET my_set;
 // O_SET my_set;
+B_SET my_set;
 
 class HISTORY
 {
