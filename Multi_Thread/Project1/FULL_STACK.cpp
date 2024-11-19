@@ -249,7 +249,6 @@ public:
 
 			case ST_WAIT:
 				if (true == CAS(old_v, v, ST_WAIT, ST_BUSY)) {
-					++exchange_count;
 					return old_v;
 				}
 
@@ -304,6 +303,10 @@ public:
 					&old_range,
 					old_range - 1);
 			}
+		}
+
+		else if (ret != value) {
+			++exchange_count;
 		}
 
 		else {
