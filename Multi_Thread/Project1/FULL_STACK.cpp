@@ -3,11 +3,12 @@
 #include <mutex>
 #include <chrono>
 #include <vector>
+#include <random>
 #include <array>
 #include <atomic>
 #include <queue>
-#include <set>
 #include <unordered_set>
+#include <set>
 
 constexpr int MAX_THREADS = 16;
 
@@ -28,6 +29,7 @@ public:
 struct HISTORY {
 	std::vector <int> push_values, pop_values;
 };
+
 std::atomic_int stack_size;
 
 class C_STACK {
@@ -165,7 +167,239 @@ public:
 	}
 };
 
-LF_STACK my_stack;
+constexpr int MAX_EXCHANGER = (MAX_THREADS / 2) - 1;
+constexpr int RET_TIMEOUT = -2;
+constexpr int RET_BUSYTIMEOUT = -3;
+constexpr int RET_POP = -1;
+
+constexpr int ST_EMPTY = 0;
+constexpr int ST_WAIT = 1;
+constexpr int ST_BUSY = 2;
+
+constexpr int MAX_LOOP = 10;
+
+std::atomic_int exchange_count = 0;
+
+class LockFreeExchanger {
+	volatile unsigned int slot;
+
+	unsigned int get_slot(unsigned int* st)
+	{
+		unsigned t = slot;
+		*st = t >> 30;
+		return t & 0x3FFFFFFF;
+	}
+
+	unsigned int get_state()
+	{
+		return slot >> 30;
+	}
+
+	bool CAS(unsigned old_v, unsigned new_v, unsigned old_st, unsigned new_st)
+	{
+		unsigned int o_slot = old_v + (old_st << 30);
+		unsigned n_slot = new_v + (new_st << 30);
+		return std::atomic_compare_exchange_strong(
+			reinterpret_cast<volatile std::atomic_uint*>(&slot),
+			&o_slot,
+			n_slot
+		);
+	}
+
+public:
+	int exchange(int v)
+	{
+		unsigned st = 0;
+
+		for (int i = 0; i < MAX_LOOP; ++i) {
+			unsigned int old_v = get_slot(&st);
+
+			switch (st) {
+			case ST_EMPTY:
+				if (true == CAS(old_v, v, ST_EMPTY, ST_WAIT)) {
+					bool time_out = true;
+
+					for (int j = 0; j < MAX_LOOP; ++j) {
+						if (ST_WAIT != get_state()) {
+							time_out = false;
+							break;
+						}
+
+						if (false == time_out) {
+							int ret = get_slot(&st);
+							slot = 0;
+							return ret;
+						}
+
+						else {
+							if (true == CAS(old_v, 0, ST_WAIT, ST_EMPTY)) {
+								return RET_TIMEOUT; // 기다려도 오지 않아서 return
+							}
+
+							else {
+								int ret = get_slot(&st);
+								slot = 0;
+								return ret;
+							}
+						}
+					}
+				}
+
+				break;
+
+			case ST_WAIT:
+				if (true == CAS(old_v, v, ST_WAIT, ST_BUSY)) {
+					++exchange_count;
+					return old_v;
+				}
+
+				break;
+
+			case ST_BUSY:
+				break;
+
+			default:
+				std::cout << "Invalid Exchange State Error" << std::endl;
+				exit(-1);
+			}
+		}
+
+		return RET_BUSYTIMEOUT;
+	}
+};
+
+class EliminationArray {
+	int range;
+	LockFreeExchanger exchanger[MAX_EXCHANGER];
+
+public:
+	EliminationArray()
+	{
+		range = 1;
+	}
+
+	~EliminationArray()
+	{
+	}
+
+	int Visit(int value)
+	{
+		int slot = rand() % range;
+		int ret = exchanger[slot].exchange(value);
+		int old_range = range;
+
+		if (ret == RET_BUSYTIMEOUT) {
+			if (old_range < MAX_EXCHANGER - 1) {
+				std::atomic_compare_exchange_strong(
+					reinterpret_cast<std::atomic_int*>(&range),
+					&old_range,
+					old_range + 1);
+			}
+		}
+
+		else if (ret == RET_TIMEOUT) {
+			if (old_range > 1) {
+				std::atomic_compare_exchange_strong(
+					reinterpret_cast<std::atomic_int*>(&range),
+					&old_range,
+					old_range - 1);
+			}
+		}
+
+		else {
+			return ret;
+		}
+	}
+};
+
+class LF_EL_STACK {
+	EliminationArray m_earr;
+
+	NODE* volatile m_top;
+
+	bool CAS(NODE* old_ptr, NODE* new_ptr)
+	{
+		return std::atomic_compare_exchange_strong(
+			reinterpret_cast<volatile std::atomic_llong*>(&m_top),
+			reinterpret_cast<long long*>(&old_ptr),
+			reinterpret_cast<long long>(new_ptr)
+		);
+	}
+
+public:
+	LF_EL_STACK()
+	{
+		m_top = nullptr;
+	}
+
+	void clear()
+	{
+		while (-2 != Pop());
+	}
+
+	void Push(int x)
+	{
+		NODE* e = new NODE{ x };
+
+		while (true) {
+			NODE* last = m_top;
+			e->next = last;
+
+			if (true == CAS(last, e)) {
+				return;
+			}
+
+			int ret = m_earr.Visit(x);
+
+			if (ret == RET_POP) {
+				return;
+			}
+		}
+	}
+
+	int Pop()
+	{
+		while (true) {
+			NODE* volatile last = m_top;
+
+			if (nullptr == last) {
+				return -2;
+			}
+
+			NODE* volatile next = last->next;
+
+			if (last != m_top) {
+				continue;
+			}
+
+			int v = last->key;
+
+			if (true == CAS(last, next)) {
+				return v;
+			}
+
+			m_earr.Visit(RET_POP);
+		}
+	}
+
+	void print20()
+	{
+		NODE* p = m_top;
+
+		for (int i = 0; i < 20; ++i) {
+			if (nullptr == p) {
+				break;
+			}
+
+			std::cout << p->key << ", ";
+			p = p->next;
+		}
+
+		std::cout << std::endl;
+	}
+};
+
+LF_EL_STACK my_stack;
 
 thread_local int thread_id;
 
@@ -288,5 +522,7 @@ int main()
 
 		my_stack.print20();
 		check_history(history);
+
+		std::cout << "Total Exchanges : " << exchange_count.load() << std::endl;
 	}
 }
