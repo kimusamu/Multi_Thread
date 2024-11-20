@@ -187,7 +187,15 @@ class LockFreeExchanger {
 	{
 		unsigned t = slot;
 		*st = t >> 30;
-		return t & 0x3FFFFFFF;
+		unsigned ret = t & 0x3FFFFFFF;
+
+		if (ret == 0x3FFFFFFF) {
+			return 0x3FFFFFFF;
+		}
+
+		else {
+			return ret;
+		}
 	}
 
 	unsigned int get_state()
@@ -232,7 +240,7 @@ public:
 						}
 
 						else {
-							if (true == CAS(old_v, 0, ST_WAIT, ST_EMPTY)) {
+							if (true == CAS(v, 0, ST_WAIT, ST_EMPTY)) {
 								return RET_TIMEOUT; // 기다려도 오지 않아서 return
 							}
 
@@ -305,13 +313,11 @@ public:
 			}
 		}
 
-		else if (ret != value) {
+		else {
 			++exchange_count;
 		}
 
-		else {
-			return ret;
-		}
+		return ret;
 	}
 };
 
@@ -381,7 +387,11 @@ public:
 				return v;
 			}
 
-			m_earr.Visit(RET_POP);
+			int ret = m_earr.Visit(RET_POP);
+
+			if (ret == RET_POP) {
+				return -2;
+			}
 		}
 	}
 

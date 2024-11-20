@@ -30,5 +30,8 @@
     <ClCompile Include="LF_BO_STACK.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="FULL_SKIPLIST.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
