@@ -34,14 +34,27 @@ class SKNODE {
 public:
 	int	key;
 	SKNODE* volatile next[MAX_TOP + 1];
-	std::mutex n_lock;
 	int top_level;
 
-	SKNODE(int x, int top) : key(x), top_level(top)
+	volatile bool fully_linked;
+	volatile bool removed;
+	std::recursive_mutex n_lock;
+
+	SKNODE(int x, int top) : key(x), top_level(top), fully_linked(false), removed(false)
 	{
 		for (auto& p : next) {
 			p = nullptr;
 		}
+	}
+
+	void Lock()
+	{
+		n_lock.lock();
+	}
+
+	void Unlock()
+	{
+		n_lock.unlock();
 	}
 };
 
@@ -190,7 +203,221 @@ public:
 	}
 };
 
-C_SKLIST my_sklist;
+class L_SKLIST {
+	SKNODE head{ std::numeric_limits<int>::min(), MAX_TOP },
+		tail{ std::numeric_limits<int>::max(), MAX_TOP };
+
+public:
+	L_SKLIST()
+	{
+		for (auto& p : head.next) {
+			p = &tail;
+		}
+
+		head.fully_linked = true;
+		tail.fully_linked = true;
+	}
+
+	void clear()
+	{
+		while (head.next[0] != &tail) {
+			auto p = head.next[0];
+			head.next[0] = head.next[0]->next[0];
+			delete p;
+		}
+
+		for (auto& p : head.next) {
+			p = &tail;
+		}
+	}
+
+	int Find(int x, SKNODE* prevs[], SKNODE* currs[])
+	{
+		int key = x;
+		int found = -1;
+		SKNODE* prev = &head;
+
+		for (int i = MAX_TOP; i >= 0; --i) {
+			SKNODE* curr = prev->next[i];
+
+			while (key > curr->key) {
+				prev = curr;
+				curr = prev->next[i];
+			}
+
+			if (found == -1 && key == curr->key) {
+				found = i;
+			}
+
+			prevs[i] = prev;
+			currs[i] = curr;
+		}
+
+		return found;
+	}
+
+	bool Add(int x)
+	{
+		int topLevel = rand() % (MAX_TOP + 1);
+		SKNODE* prevs[MAX_TOP + 1];
+		SKNODE* currs[MAX_TOP + 1];
+
+		while (true) {
+			int found = Find(x, prevs, currs);
+
+			if (found != -1) {
+				SKNODE* nodeFound = currs[found];
+
+				if (!nodeFound->removed) {
+					while (!nodeFound->fully_linked);
+					return false;
+				}
+
+				continue;
+			}
+
+			int highestLocked = -1;
+			SKNODE* prev;
+			SKNODE* curr;
+			bool valid = true;
+
+			for (int i = 0; valid && (i <= topLevel); ++i) {
+				prev = prevs[i];
+				curr = currs[i];
+				prev->Lock();
+				highestLocked = i;
+				valid = !prev->removed && !curr->removed && prev->next[i] == curr;
+			}
+
+			if (!valid) {
+				for (int i = 0; i <= highestLocked; ++i) {
+					prevs[i]->Unlock();
+				}
+
+				continue;
+			}
+
+			SKNODE* newNode = new SKNODE(x, topLevel);
+
+			for (int i = 0; i <= topLevel; ++i) {
+				newNode->next[i] = currs[i];
+			}
+
+			for (int i = 0; i <= topLevel; ++i) {
+				prevs[i]->next[i] = newNode;
+			}
+
+			newNode->fully_linked = true;
+
+			for (int i = 0; i <= highestLocked; ++i) {
+				prevs[i]->Unlock();
+			}
+
+			return true;
+		}
+	}
+
+	bool Remove(int x)
+	{
+		SKNODE* victim = nullptr;
+		SKNODE* prevs[MAX_TOP + 1];
+		SKNODE* currs[MAX_TOP + 1];
+		bool isMakred = false;
+		int topLevel = -1;
+
+		while (true) {
+			int found = Find(x, prevs, currs);
+
+			if (found != -1) {
+				victim = currs[found];
+			}
+
+			if (isMakred ||
+				(found != -1 &&
+					(victim->fully_linked
+						&& victim->top_level == found
+						&& !victim->removed))) {
+				if (!isMakred) {
+					topLevel = victim->top_level;
+					victim->Lock();
+
+					if (victim->removed) {
+						victim->Unlock();
+						return false;
+					}
+
+					victim->removed = true;
+					isMakred = true;
+				}
+
+				int highestLocked = -1;
+
+				SKNODE* prev;
+				SKNODE* curr;
+				bool valid = true;
+
+				for (int i = 0; valid && (i <= topLevel); ++i) {
+					prev = prevs[i];
+					prev->Lock();
+					highestLocked = i;
+					valid = !prev->removed && prev->next[i] == victim;
+				}
+
+				if (!valid) {
+					for (int i = 0; i <= highestLocked; ++i) {
+						prevs[i]->Unlock();
+					}
+
+					continue;
+				}
+
+				for (int i = topLevel; i >= 0; --i) {
+					prevs[i]->next[i] = victim->next[i];
+				}
+
+				victim->Unlock();
+
+				for (int i = 0; i <= highestLocked; ++i) {
+					prevs[i]->Unlock();
+				}
+
+				return true;
+			}
+
+			else {
+				return false;
+			}
+		}
+	}
+
+	bool Contains(int x)
+	{
+		SKNODE* prevs[MAX_TOP + 1];
+		SKNODE* currs[MAX_TOP + 1];
+
+		int found = Find(x, prevs, currs);
+
+		return (found != -1 && currs[found]->fully_linked && !currs[found]->removed);
+	}
+
+	void print20()
+	{
+		auto p = head.next[0];
+
+		for (int i = 0; i < 20; ++i) {
+			if (p == &tail) {
+				break;
+			}
+
+			std::cout << p->key << ", ";
+			p = p->next[0];
+		}
+
+		std::cout << std::endl;
+	}
+};
+
+L_SKLIST my_sklist;
 
 thread_local int thread_id;
 
